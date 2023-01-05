@@ -1,3 +1,4 @@
+using System.Reactive.Subjects;
 using TrayStatus.Core;
 
 namespace TrayStatus.IconProviders.Test1;
@@ -6,11 +7,12 @@ class Test1StatusProvider : IStatusProvider
 {
     public IObservable<Stream> GetIconSource()
     {
-        throw new NotImplementedException();
+        var iconStream = GetType().Assembly.GetManifestResourceStream($"{GetType().Namespace}.icon.ico")!;
+        return new BehaviorSubject<Stream>(iconStream);
     }
 
     public IObservable<string> GetTextSource()
     {
-        throw new NotImplementedException();
+        return new BehaviorSubject<string>("Test!");
     }
 }

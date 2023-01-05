@@ -1,24 +1,32 @@
 using System.Reflection;
 using TrayStatus.Core;
+using System.Reactive.Linq;
+using System.Collections.ObjectModel;
 
 namespace TrayStatus.Bootstrapper;
 
 public partial class MainForm : Form
 {
-    private readonly NotifyIcon icon;
+    private readonly Collection<IDisposable> subscriptions = new Collection<IDisposable>();
 
     public MainForm(IEnumerable<IStatusProvider> statusProviders)
     {
         InitializeComponent();
 
-        var closeApplicationMenuItem = new ToolStripMenuItem("Close");
-        closeApplicationMenuItem.Click += (_, __) => Application.Exit();
-
-        this.icon = new NotifyIcon()
+        foreach (var icon in statusProviders.Select(GetIcon))
         {
-          Text = "test",
+            this.components!.Add(icon);
+        }
+    }
+
+    private NotifyIcon GetIcon(IStatusProvider provider)
+    {
+        var closeApplicationMenuItem = new ToolStripMenuItem("Close");
+        closeApplicationMenuItem.Click += (_, __) => Close();
+
+        var icon = new NotifyIcon()
+        {
           Visible = true,
-          Icon = new Icon("testicon.ico"),
           ContextMenuStrip = new ContextMenuStrip()
           {
             Items =
@@ -35,6 +43,13 @@ public partial class MainForm : Form
                 mi.Invoke(icon, null);
             }
         };
+
+        var i = provider.GetIconSource().Subscribe(x => icon.Icon = new Icon(x));
+        var t = provider.GetTextSource().Subscribe(x => icon.Text = x);
+        subscriptions.Add(i);
+        subscriptions.Add(t);
+
+        return icon;
     }
 
     protected override void OnLoad(EventArgs e)
@@ -42,5 +57,13 @@ public partial class MainForm : Form
         Visible = false;
         ShowInTaskbar = false;
         base.OnLoad(e);
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        foreach (var x in subscriptions)
+            x.Dispose();
+
+        base.OnClosed(e);
     }
 }
