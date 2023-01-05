@@ -1,4 +1,5 @@
 using System.Reflection;
+using TrayStatus.Core;
 
 namespace TrayStatus.Bootstrapper;
 
@@ -6,7 +7,7 @@ public partial class MainForm : Form
 {
     private readonly NotifyIcon icon;
 
-    public MainForm()
+    public MainForm(IEnumerable<IStatusProvider> statusProviders)
     {
         InitializeComponent();
 
