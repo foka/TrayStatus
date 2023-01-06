@@ -2,6 +2,7 @@ using System.Reflection;
 using TrayStatus.Core;
 using System.Reactive.Linq;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 namespace TrayStatus.Bootstrapper;
 
@@ -53,13 +54,15 @@ public partial class MainForm : Form
             return menuItem;
         });
 
-        var closeMenuItem = new ToolStripMenuItem("Exit");
-        closeMenuItem.Click += (_, _) => Close();
+        var projectSiteItem = new ToolStripMenuItem("Project site", null,
+            (_, _) => Process.Start(new ProcessStartInfo { FileName = "https://github.com/foka/WindowsGitlabRunnerTrayStatus", UseShellExecute = true }));
+        projectSiteItem.ToolTipText = "https://github.com/foka/WindowsGitlabRunnerTrayStatus";
 
         var menu = new ContextMenuStrip();
         menu.Items.AddRange(commandsItems.ToArray());
         menu.Items.Add("-");
-        menu.Items.Add(closeMenuItem);
+        menu.Items.Add(projectSiteItem);
+        menu.Items.Add("Exit", null, (_, _) => Close());
         return menu;
     }
 
