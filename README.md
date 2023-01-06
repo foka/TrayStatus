@@ -1,6 +1,8 @@
 # Windows GitLab Runner Tray Status
 This is a Windows application that lets you control `gitlab-runner` service from system tray icon.
 
+![demo animation](./docs/images/demo-animation.gif)
+
 ## Features
 * Start and stop the service from system tray icon context menu.
 * Show color or b/w icon depending on the status of the service.
