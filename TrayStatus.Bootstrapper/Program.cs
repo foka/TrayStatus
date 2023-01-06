@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using TrayStatus.StatusProviders.GitLabRunner;
 
 namespace TrayStatus.Bootstrapper;
 

@@ -7,33 +7,35 @@ namespace TrayStatus.Bootstrapper;
 
 public partial class MainForm : Form
 {
+    private readonly Icon defaultIcon = new Icon(SystemIcons.Information, 20, 20);
     private readonly Collection<IDisposable> subscriptions = new Collection<IDisposable>();
 
     public MainForm(IEnumerable<IStatusProvider> statusProviders)
     {
         InitializeComponent();
 
-        foreach (var icon in statusProviders.Select(GetIcon))
+        foreach (var notifyIcon in statusProviders.Select(CreateIcon))
         {
-            this.components!.Add(icon);
+            this.components!.Add(notifyIcon);
         }
     }
 
-    private NotifyIcon GetIcon(IStatusProvider provider)
+    private NotifyIcon CreateIcon(IStatusProvider provider)
     {
-        var closeApplicationMenuItem = new ToolStripMenuItem("Close");
-        closeApplicationMenuItem.Click += (_, __) => Close();
+        var closeMenuItem = new ToolStripMenuItem("Close");
+        closeMenuItem.Click += (_, _) => Close();
 
         var icon = new NotifyIcon()
         {
-          Visible = true,
-          ContextMenuStrip = new ContextMenuStrip()
-          {
-            Items =
+            Icon = defaultIcon,
+            Visible = true,
+            ContextMenuStrip = new ContextMenuStrip()
             {
-                closeApplicationMenuItem
+                Items =
+                {
+                    closeMenuItem
+                }
             }
-          }
         };
         icon.MouseClick += (_, args) =>
         {

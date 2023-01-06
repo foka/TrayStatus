@@ -1,13 +1,21 @@
 using System.Reactive.Subjects;
 using TrayStatus.Core;
+using TrayStatus.StatusProviders.GitLabRunner.Icons;
 
 namespace TrayStatus.StatusProviders.GitLabRunner;
 
 class GitLabRunnerStatusProvider : IStatusProvider
 {
+    private readonly IconProvider iconProvider;
+
+    public GitLabRunnerStatusProvider(IconProvider iconProvider)
+    {
+        this.iconProvider = iconProvider ?? throw new ArgumentNullException(nameof(iconProvider));
+    }
+
     public IObservable<Stream> GetIconSource()
     {
-        var iconStream = GetType().Assembly.GetManifestResourceStream($"{GetType().Namespace}.icon.ico")!;
+        var iconStream = iconProvider.Get();
         return new BehaviorSubject<Stream>(iconStream);
     }
 
