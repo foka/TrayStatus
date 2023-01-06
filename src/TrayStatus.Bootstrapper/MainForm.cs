@@ -55,8 +55,8 @@ public partial class MainForm : Form
         });
 
         var projectSiteItem = new ToolStripMenuItem("Project site", null,
-            (_, _) => Process.Start(new ProcessStartInfo { FileName = "https://github.com/foka/WindowsGitlabRunnerTrayStatus", UseShellExecute = true }));
-        projectSiteItem.ToolTipText = "https://github.com/foka/WindowsGitlabRunnerTrayStatus";
+            (_, _) => Process.Start(new ProcessStartInfo { FileName = "https://github.com/foka/WindowsGitLabRunnerTrayStatus", UseShellExecute = true }));
+        projectSiteItem.ToolTipText = "https://github.com/foka/WindowsGitLabRunnerTrayStatus";
 
         var menu = new ContextMenuStrip();
         menu.Items.AddRange(commandsItems.ToArray());
