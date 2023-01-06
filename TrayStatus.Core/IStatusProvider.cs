@@ -2,6 +2,7 @@
 
 public interface IStatusProvider
 {
-    IObservable<Stream> GetIconSource();
-    IObservable<string> GetTextSource();
+    IObservable<Stream> IconSource { get; }
+    IObservable<string> TextSource { get; }
+    IObservable<IEnumerable<StatusCommand>> CommandsSource { get; }
 }

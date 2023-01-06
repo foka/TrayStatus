@@ -22,20 +22,11 @@ public partial class MainForm : Form
 
     private NotifyIcon CreateIcon(IStatusProvider provider)
     {
-        var closeMenuItem = new ToolStripMenuItem("Close");
-        closeMenuItem.Click += (_, _) => Close();
-
         var icon = new NotifyIcon()
         {
             Icon = defaultIcon,
             Visible = true,
-            ContextMenuStrip = new ContextMenuStrip()
-            {
-                Items =
-                {
-                    closeMenuItem
-                }
-            }
+            ContextMenuStrip = CreateMenu(Enumerable.Empty<StatusCommand>()),
         };
         icon.MouseClick += (_, args) =>
         {
@@ -46,10 +37,30 @@ public partial class MainForm : Form
             }
         };
 
-        Subscribe(provider.GetIconSource(), x => icon.Icon = new Icon(x));
-        Subscribe(provider.GetTextSource(), x => icon.Text = x);
+        Subscribe(provider.IconSource, x => icon.Icon = new Icon(x));
+        Subscribe(provider.TextSource, x => icon.Text = x);
+        Subscribe(provider.CommandsSource, x => icon.ContextMenuStrip = CreateMenu(x));
 
         return icon;
+    }
+
+    private ContextMenuStrip CreateMenu(IEnumerable<StatusCommand> commands)
+    {
+        var commandsItems = commands.Select(x =>
+        {
+            var menuItem = new ToolStripMenuItem(x.Text);
+            menuItem.Click += (_, _) => x.Click();
+            return menuItem;
+        });
+
+        var closeMenuItem = new ToolStripMenuItem("Exit");
+        closeMenuItem.Click += (_, _) => Close();
+
+        var menu = new ContextMenuStrip();
+        menu.Items.AddRange(commandsItems.ToArray());
+        menu.Items.Add("-");
+        menu.Items.Add(closeMenuItem);
+        return menu;
     }
 
     private void Subscribe<T>(IObservable<T> observable, Action<T> onNext) => subscriptions.Add(observable.Subscribe(onNext));

@@ -8,21 +8,23 @@ namespace TrayStatus.StatusProviders.GitLabRunner;
 
 class GitLabRunnerStatusProvider : IStatusProvider, IDisposable
 {
-    private readonly WindowsService windowsServiceStatus;
+    private readonly WindowsServiceController windowsService;
     private readonly IconProvider iconProvider;
+    private ServiceControllerStatus? serviceStatus;
     private readonly ISubject<Stream> iconSubject = new ReplaySubject<Stream>(1);
     private readonly ISubject<string> textSubject = new ReplaySubject<string>(1);
-    private ServiceControllerStatus? serviceStatus;
+    private readonly ISubject<IEnumerable<StatusCommand>> commandsSubject = new ReplaySubject<IEnumerable<StatusCommand>>(1);
     private readonly Collection<IDisposable> subscriptions = new Collection<IDisposable>();
 
     public GitLabRunnerStatusProvider(IconProvider iconProvider)
     {
         this.iconProvider = iconProvider ?? throw new ArgumentNullException(nameof(iconProvider));
 
-        OnStateChanged(new NotRunningServiceState(iconProvider));
+        windowsService = new WindowsServiceController("gitlab-runner", TimeSpan.FromSeconds(5));
 
-        windowsServiceStatus = new WindowsService("gitlab-runner");
-        Subscribe(windowsServiceStatus.ObserveStatus(TimeSpan.FromSeconds(3)), ChangeState);
+        OnStateChanged(new NotRunningServiceState(iconProvider, windowsService));
+
+        Subscribe(windowsService.StatusSource, ChangeState);
     }
 
     private void ChangeState(ServiceControllerStatus serviceStatus)
@@ -30,54 +32,68 @@ class GitLabRunnerStatusProvider : IStatusProvider, IDisposable
         if (this.serviceStatus == serviceStatus)
             return;
 
-        IServiceState state = serviceStatus switch
+        ServiceState state = serviceStatus switch
         {
-            ServiceControllerStatus.Running => new RunningServiceState(iconProvider),
-            _ => new NotRunningServiceState(iconProvider),
+            ServiceControllerStatus.Running => new RunningServiceState(iconProvider, windowsService),
+            _ => new NotRunningServiceState(iconProvider, windowsService),
         };
         OnStateChanged(state);
 
         this.serviceStatus = serviceStatus;
     }
 
-    private void OnStateChanged(IServiceState state)
+    private void OnStateChanged(ServiceState state)
     {
         this.iconSubject.OnNext(state.Icon);
         this.textSubject.OnNext(state.Text);
+        this.commandsSubject.OnNext(state.Commands);
     }
 
-    public IObservable<Stream> GetIconSource() => iconSubject;
-    public IObservable<string> GetTextSource() => textSubject;
+    public IObservable<Stream> IconSource => iconSubject;
+    public IObservable<string> TextSource => textSubject;
+    public IObservable<IEnumerable<StatusCommand>> CommandsSource => commandsSubject;
 
     private void Subscribe<T>(IObservable<T> observable, Action<T> onNext) => subscriptions.Add(observable.Subscribe(onNext));
 
     public void Dispose()
     {
-        windowsServiceStatus.Dispose();
+        windowsService.Dispose();
 
         foreach (var x in subscriptions)
             x.Dispose();
     }
 
-    interface IServiceState
+
+    abstract class ServiceState
     {
-        Stream Icon { get; }
-        string Text { get; }
+        public Stream Icon { get; protected set; } = null!;
+        public string Text { get; protected set; } = "";
+        public IEnumerable<StatusCommand> Commands { get; protected set; } = Enumerable.Empty<StatusCommand>();
     }
 
-    class RunningServiceState : IServiceState
+    class RunningServiceState : ServiceState
     {
-        public Stream Icon { get; }
-        public string Text => "GitLab runner service is running";
-
-        public RunningServiceState(IconProvider iconProvider) => Icon = iconProvider.GetRunning();
+        public RunningServiceState(IconProvider iconProvider, WindowsServiceController windowsService)
+        {
+            Icon = iconProvider.GetRunning();
+            Text = "GitLab runner service is running";
+            Commands = new []
+            {
+                new StatusCommand("Stop runner", () => windowsService.Stop())
+            };
+        }
     }
 
-    class NotRunningServiceState : IServiceState
+    class NotRunningServiceState : ServiceState
     {
-        public Stream Icon { get; }
-        public string Text => "GitLab runner service is not running";
-
-        public NotRunningServiceState(IconProvider iconProvider) => Icon = iconProvider.GetNotRunning();
+        public NotRunningServiceState(IconProvider iconProvider, WindowsServiceController windowsService)
+        {
+            Icon = iconProvider.GetNotRunning();
+            Text = "GitLab runner service is not running";
+            Commands = new []
+            {
+                new StatusCommand("Start runner", () => windowsService.Start())
+            };
+        }
     }
 }
