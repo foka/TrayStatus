@@ -1,5 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using TrayStatus.IconProviders.Test1;
+using TrayStatus.StatusProviders.GitLabRunner;
 
 namespace TrayStatus.Bootstrapper;
 
@@ -21,6 +21,7 @@ static class Program
     private static void ConfigureServices(ServiceCollection services)
     {
         services.AddSingleton<MainForm>();
-        services.AddTest1Icon();
+
+        services.AddGitLabRunnerStatus();
     }
 }

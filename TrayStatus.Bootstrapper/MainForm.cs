@@ -44,13 +44,13 @@ public partial class MainForm : Form
             }
         };
 
-        var i = provider.GetIconSource().Subscribe(x => icon.Icon = new Icon(x));
-        var t = provider.GetTextSource().Subscribe(x => icon.Text = x);
-        subscriptions.Add(i);
-        subscriptions.Add(t);
+        Subscribe(provider.GetIconSource(), x => icon.Icon = new Icon(x));
+        Subscribe(provider.GetTextSource(), x => icon.Text = x);
 
         return icon;
     }
+
+    private void Subscribe<T>(IObservable<T> observable, Action<T> onNext) => subscriptions.Add(observable.Subscribe(onNext));
 
     protected override void OnLoad(EventArgs e)
     {

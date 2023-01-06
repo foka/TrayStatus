@@ -1,9 +1,9 @@
 using System.Reactive.Subjects;
 using TrayStatus.Core;
 
-namespace TrayStatus.IconProviders.Test1;
+namespace TrayStatus.StatusProviders.GitLabRunner;
 
-class Test1StatusProvider : IStatusProvider
+class GitLabRunnerStatusProvider : IStatusProvider
 {
     public IObservable<Stream> GetIconSource()
     {
